@@ -1,0 +1,5 @@
+import './bot'
+import '../commands/index'
+// import '../routes/index'
+import '../actions/index'
+import '../handlers/index'

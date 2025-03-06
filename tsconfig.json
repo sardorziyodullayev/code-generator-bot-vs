@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
+    "newLine": "lf",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": false,
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedParameters": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "target": "es2021",
+    "moduleResolution": "Node",
+    "module": "CommonJS",
+    "declaration": true,
+    "importHelpers": true,
+    "types": ["node", "reflect-metadata"],
+    "esModuleInterop": true,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "outDir": "build"
+  },
+  "exclude": ["node_modules", "build", "**/*.spec.ts"]
+}

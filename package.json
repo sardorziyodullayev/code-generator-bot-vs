@@ -1,0 +1,49 @@
+{
+  "name": "codegenerator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --ignore '*.json' --exec ts-node -- --files src/index.ts",
+    "start": "node build/index.js",
+    "build": "rm -rf ./build && tsc --project ./tsconfig.json && npm run copy-locales",
+    "copy-locales": "npx copyfiles -u 3 src/bot/locales/*.json build/bot/locales"
+  },
+  "author": "Umar Akbarov",
+  "license": "ISC",
+  "dependencies": {
+    "@grammyjs/i18n": "^0.5.1",
+    "@grammyjs/router": "^1.1.1",
+    "@typegoose/typegoose": "^12.13.0",
+    "@types/archiver": "^5.3.4",
+    "archiver": "^6.0.1",
+    "bcrypt": "^5.1.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.13.1",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "grammy": "^1.8.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.12.1",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.2",
+    "redis": "^4.6.5",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
+    "@types/cors": "^2.8.14",
+    "@types/express": "^4.17.17",
+    "@types/jsonwebtoken": "^9.0.2",
+    "@types/md5": "^2.3.1",
+    "@types/multer": "^1.4.7",
+    "@types/node": "^20.5.7",
+    "@types/node-cron": "^3.0.8",
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
+    "@typescript-eslint/parser": "^5.13.0",
+    "dotenv": "^16.3.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
