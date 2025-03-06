@@ -22,7 +22,7 @@ export const ENV = {
   },
   BASE_URL: process.env.BASE_URL || '',
   HTTP_HOST: process.env.HTTP_HOST || '0.0.0.0',
-  HTTP_PORT: getOrReturnDefaultNumber(process.env.HTTP_PORT, 4000),
+  HTTP_PORT: getOrReturnDefaultNumber(process.env.HTTP_PORT, 5000),
   JWT_SECRET_ACCESS: process.env.JWT_SECRET || 'JWT_SECRET_ACCESS',
   JWT_SECRET_REFRESH: process.env.JWT_SECRET_REFRESH || 'JWT_SECRET_REFRESH',
   JWT_EXPIRE_ACCESS: process.env.JWT_EXPIRE_ACCESS || '15M',
