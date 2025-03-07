@@ -8,7 +8,8 @@
     "dev": "nodemon --ignore '*.json' --exec ts-node -- --files src/index.ts",
     "start": "node build/index.js",
     "build": "rm -rf ./build && tsc --project ./tsconfig.json && npm run copy-locales",
-    "copy-locales": "npx copyfiles -u 3 src/bot/locales/*.json build/bot/locales"
+    "copy-locales": "npx copyfiles -u 3 src/bot/locales/*.json build/bot/locales",
+    "n": "npx tsc && npm run build && node build/index.js"
   },
   "author": "Umar Akbarov",
   "license": "ISC",

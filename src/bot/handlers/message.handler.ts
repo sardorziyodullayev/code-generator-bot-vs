@@ -82,11 +82,11 @@ async function checkCode(ctx: MyContext) {
   ctx.session.is_editable_image = false;
   ctx.session.is_editable_message = false;
 
-  const usedCodesCount = await CodeModel.find({ usedById: ctx.session.user.db_id, deletedAt: null }).count();
+  const usedCodesCount = await CodeModel.find({ usedById: ctx.session.user.db_id, deletedAt: null }).countDocuments();
 
   const settings = await SettingsModel.findOne({ deletedAt: null }).lean();
 
-  if (settings.codeLimitPerUser.status && settings.codeLimitPerUser.value >= usedCodesCount) {
+  if (settings?.codeLimitPerUser?.status && settings?.codeLimitPerUser?.value && settings.codeLimitPerUser.value >= usedCodesCount) {
     return await ctx.api.forwardMessage(ctx.from.id, channelId, messageIds[lang].codeUsageLimit);
   }
 
