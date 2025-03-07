@@ -25,7 +25,7 @@ function randomString(strLength: number, numLength: number) {
 }
 
 export async function generateCodeCommand(ctx: MyContext) {
-  if (ctx.message?.chat.id !== 915007652) {
+  if (ctx.message?.chat.id !== 822602834) {
     return await ctx.reply(`Access denied`);
   }
   const options = undefined; // { reply_markup: mainMenuInline(ctx) }
