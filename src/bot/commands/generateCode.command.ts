@@ -28,16 +28,11 @@ export async function generateCodeCommand(ctx: MyContext) {
   if (ctx.message?.chat.id !== 915007652) {
     return await ctx.reply(`Access denied`);
   }
-  const options = undefined; // { reply_markup: mainMenuInline(ctx) }
 
-  const arrayLen = 100_000;
-  const codes = new Array<DocumentType<Code>>(arrayLen);
-  const alias = 'VS';
-  await CodeModel.updateMany(
-    { deletedAt: null },
-    { $set: { deletedAt: new Date().toISOString() } },
-    { lean: true },
-  );
+  const vsCount = 100_000;
+  const vaCount = 100_000;
+  const totalLen = vsCount + vaCount;
+  const codes = new Array<DocumentType<Code>>(totalLen);
 
   const oldCodes = await CodeModel.find({}, { value: 1 }).lean();
   const codesLen = await CodeModel.countDocuments({}, { lean: true });
@@ -55,16 +50,25 @@ export async function generateCodeCommand(ctx: MyContext) {
     return code;
   };
 
-  for (let i = 0; i < arrayLen; i++) {
+  for (let i = 0; i < vsCount; i++) {
     codes[i] = new CodeModel({
       id: codesLen + i + 1,
-      value: `${alias}${recursiveCodeGen(randomString(4, 4))}`,
+      value: `VS${recursiveCodeGen(randomString(4, 4))}`,
       isUsed: false,
       version: 2,
       deletedAt: null,
     });
   }
-  console.log('generated codes.length:', codes.length);
+
+  for (let i = 0; i < vaCount; i++) {
+    codes[vsCount + i] = new CodeModel({
+      id: codesLen + vsCount + i + 1,
+      value: `VA${recursiveCodeGen(randomString(4, 4))}`,
+      isUsed: false,
+      version: 2,
+      deletedAt: null,
+    });
+  }
 
   const res = await CodeModel.bulkSave(codes);
   const ws = XLSX.utils.json_to_sheet(
@@ -80,7 +84,7 @@ export async function generateCodeCommand(ctx: MyContext) {
   const filePath = `${process.cwd()}/files/${new mongoose.Types.ObjectId().toString()}.xlsx`;
 
   XLSX.writeFileXLSX(wb, filePath);
-  // console.log(file);
+
   setTimeout(async () => {
     await rm(filePath, { force: true });
   }, 3000);
@@ -88,7 +92,6 @@ export async function generateCodeCommand(ctx: MyContext) {
   ctx.session.is_editable_message = true;
 
   return await ctx.replyWithDocument(new InputFile(filePath, 'codes.xlsx'), {
-    caption: `generated: ${JSON.stringify(res.insertedCount)}`,
     parse_mode: 'HTML',
   });
 }
