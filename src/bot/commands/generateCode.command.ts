@@ -81,7 +81,7 @@ export async function generateCodeCommand(ctx: MyContext) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Codes');
 
-  const filePath = `${process.cwd()}/files/${new mongoose.Types.ObjectId().toString()}.xlsx`;
+  const filePath = `${process.cwd()}/${new mongoose.Types.ObjectId().toString()}.xlsx`;
 
   XLSX.writeFileXLSX(wb, filePath);
 
