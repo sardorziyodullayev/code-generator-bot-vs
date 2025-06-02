@@ -31,67 +31,93 @@ export async function generateCodeCommand(ctx: MyContext) {
 
   const vsCount = 100_000;
   const vaCount = 150_000;
-  const totalLen = vsCount + vaCount;
-  const codes = new Array<DocumentType<Code>>(totalLen);
-
-  const oldCodes = await CodeModel.find({}, { value: 1 }).lean();
   const codesLen = await CodeModel.countDocuments({}, { lean: true });
+  const oldCodes = await CodeModel.find({}, { value: 1 }).lean();
 
   const set = new Set<string>();
   for (const oldCode of oldCodes) {
     set.add(oldCode.value);
   }
 
-  const recursiveCodeGen = (code: string): string => {
-    if (set.has(code)) {
-      return recursiveCodeGen(randomString(4, 4));
-    }
+  const recursiveCodeGen = (prefix: string): string => {
+    let code;
+    do {
+      code = `${prefix}${randomString(4, 4)}`;
+    } while (set.has(code));
     set.add(code);
     return code;
   };
 
+  // VS codes
+  const vsCodes: DocumentType<Code>[] = [];
   for (let i = 0; i < vsCount; i++) {
-    codes[i] = new CodeModel({
+    vsCodes.push(new CodeModel({
       id: codesLen + i + 1,
-      value: `VS${recursiveCodeGen(randomString(4, 4))}`,
+      value: recursiveCodeGen('VS'),
       isUsed: false,
       version: 2,
       deletedAt: null,
-    });
+    }));
   }
 
-  for (let i = 0; i < vaCount; i++) {
-    codes[vsCount + i] = new CodeModel({
-      id: codesLen + vsCount + i + 1,
-      value: `VA${recursiveCodeGen(randomString(4, 4))}`,
-      isUsed: false,
-      version: 2,
-      deletedAt: null,
-    });
-  }
+  console.log('Saving VS codes...');
+  await CodeModel.bulkSave(vsCodes);
+  console.log('VS codes saved.');
 
-  const res = await CodeModel.bulkSave(codes);
-  const ws = XLSX.utils.json_to_sheet(
-    codes.map((code) => ({
-      id: code.id - codesLen,
+  const vsSheet = XLSX.utils.json_to_sheet(
+    vsCodes.map(code => ({
+      id: code.id,
       code: code.value,
     })),
-    { header: ['id', 'code'] },
+    { header: ['id', 'code'] }
   );
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Codes');
+  const vsWb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(vsWb, vsSheet, 'VS Codes');
+  const vsFilePath = `${process.cwd()}/VS_${new mongoose.Types.ObjectId().toString()}.xlsx`;
+  XLSX.writeFileXLSX(vsWb, vsFilePath);
 
-  const filePath = `${process.cwd()}/${new mongoose.Types.ObjectId().toString()}.xlsx`;
+  // VA codes
+  const vaCodes: DocumentType<Code>[] = [];
+  for (let i = 0; i < vaCount; i++) {
+    vaCodes.push(new CodeModel({
+      id: codesLen + vsCount + i + 1,
+      value: recursiveCodeGen('VA'),
+      isUsed: false,
+      version: 2,
+      deletedAt: null,
+    }));
+  }
 
-  XLSX.writeFileXLSX(wb, filePath);
+  console.log('Saving VA codes...');
+  await CodeModel.bulkSave(vaCodes);
+  console.log('VA codes saved.');
+
+  const vaSheet = XLSX.utils.json_to_sheet(
+    vaCodes.map(code => ({
+      id: code.id,
+      code: code.value,
+    })),
+    { header: ['id', 'code'] }
+  );
+  const vaWb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(vaWb, vaSheet, 'VA Codes');
+  const vaFilePath = `${process.cwd()}/VA_${new mongoose.Types.ObjectId().toString()}.xlsx`;
+  XLSX.writeFileXLSX(vaWb, vaFilePath);
 
   setTimeout(async () => {
-    await rm(filePath, { force: true });
+    await rm(vsFilePath, { force: true });
+    await rm(vaFilePath, { force: true });
   }, 3000);
 
   ctx.session.is_editable_message = true;
 
-  return await ctx.replyWithDocument(new InputFile(filePath, 'codes.xlsx'), {
+  return await ctx.replyWithDocument(new InputFile(vsFilePath, 'VS_codes.xlsx'), {
+    caption: 'VS codes',
     parse_mode: 'HTML',
-  });
+  }).then(() =>
+    ctx.replyWithDocument(new InputFile(vaFilePath, 'VA_codes.xlsx'), {
+      caption: 'VA codes',
+      parse_mode: 'HTML',
+    })
+  );
 }
