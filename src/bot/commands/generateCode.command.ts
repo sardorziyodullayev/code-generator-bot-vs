@@ -29,7 +29,7 @@ export async function generateCodeCommand(ctx: MyContext) {
     return await ctx.reply(`Access denied`);
   }
 
-  const vsCount = 100_000;
+  const vaCount = 150_000;
   const codesLen = await CodeModel.countDocuments({}, { lean: true });
 
   const oldCodes = await CodeModel.find({}, { value: 1 }).lean();
@@ -41,15 +41,15 @@ export async function generateCodeCommand(ctx: MyContext) {
   const recursiveCodeGen = (): string => {
     let code;
     do {
-      code = `VS${randomString(4, 4)}`;
+      code = `VA${randomString(4, 4)}`;
     } while (set.has(code));
     set.add(code);
     return code;
   };
 
-  const vsCodes = [];
-  for (let i = 0; i < vsCount; i++) {
-    vsCodes.push(new CodeModel({
+  const vaCodes = [];
+  for (let i = 0; i < vaCount; i++) {
+    vaCodes.push(new CodeModel({
       id: codesLen + i + 1,
       value: recursiveCodeGen(),
       isUsed: false,
@@ -58,13 +58,12 @@ export async function generateCodeCommand(ctx: MyContext) {
     }));
   }
 
-  console.log('Saving all VS codes to MongoDB...');
-  await CodeModel.bulkSave(vsCodes);
-  console.log('All VS codes saved.');
-
+  console.log('Saving all VA codes to MongoDB...');
+  await CodeModel.bulkSave(vaCodes);
+  console.log('All VA codes saved.');
 
   const ws = XLSX.utils.json_to_sheet(
-    vsCodes.map((code) => ({
+    vaCodes.map((code) => ({
       id: code.id - codesLen,
       code: code.value,
     })),
@@ -76,7 +75,6 @@ export async function generateCodeCommand(ctx: MyContext) {
   const filePath = `${process.cwd()}/${new mongoose.Types.ObjectId().toString()}.xlsx`;
   XLSX.writeFileXLSX(wb, filePath);
 
-  // Faylni avtomatik o‘chirish (3 sekunddan keyin)
   setTimeout(async () => {
     try {
       await rm(filePath, { force: true });
