@@ -86,16 +86,9 @@ export async function generateCodeCommand(ctx: MyContext) {
 
   ctx.session.is_editable_message = true;
 
-  try {
-  console.log('Sending file to Telegram:', filePath);
-
-  await ctx.replyWithDocument(new InputFile(filePath, 'codes.xlsx'), {
+  console.log('Code generation completed and file sent.');
+  return await ctx.replyWithDocument(new InputFile(filePath, 'codes.xlsx'), {
     parse_mode: 'HTML',
   });
-
-  console.log('File successfully sent to Telegram!');
-} catch (err) {
-  console.error('❌ Error while sending file to Telegram:', err);
-  await ctx.reply(`❌ Fayl jo‘natishda xatolik yuz berdi: ${err.message}`);
-}
+  
 }
