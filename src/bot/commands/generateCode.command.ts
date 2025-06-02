@@ -5,6 +5,7 @@ import { DocumentType } from '@typegoose/typegoose';
 import XLSX from 'xlsx';
 import { rm } from 'fs/promises';
 import { InputFile } from 'grammy';
+import path from 'path';
 
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const numbs = '0123456789';
@@ -14,13 +15,10 @@ function randomString(strLength: number, numLength: number) {
   for (let i = strLength; i > 0; --i) {
     result += chars[Math.floor(Math.random() * chars.length)];
   }
-
   result += '-';
-
   for (let i = numLength; i > 0; --i) {
     result += numbs[Math.floor(Math.random() * numbs.length)];
   }
-
   return result;
 }
 
@@ -48,7 +46,6 @@ export async function generateCodeCommand(ctx: MyContext) {
     return code;
   };
 
-  // VS codes
   const vsCodes: DocumentType<Code>[] = [];
   for (let i = 0; i < vsCount; i++) {
     vsCodes.push(new CodeModel({
@@ -73,10 +70,10 @@ export async function generateCodeCommand(ctx: MyContext) {
   );
   const vsWb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(vsWb, vsSheet, 'VS Codes');
-  const vsFilePath = `${process.cwd()}/VS_${new mongoose.Types.ObjectId().toString()}.xlsx`;
+  const vsFileName = `VS_${new mongoose.Types.ObjectId().toString()}.xlsx`;
+  const vsFilePath = path.join(process.cwd(), vsFileName);
   XLSX.writeFileXLSX(vsWb, vsFilePath);
 
-  // VA codes
   const vaCodes: DocumentType<Code>[] = [];
   for (let i = 0; i < vaCount; i++) {
     vaCodes.push(new CodeModel({
@@ -101,23 +98,34 @@ export async function generateCodeCommand(ctx: MyContext) {
   );
   const vaWb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(vaWb, vaSheet, 'VA Codes');
-  const vaFilePath = `${process.cwd()}/VA_${new mongoose.Types.ObjectId().toString()}.xlsx`;
+  const vaFileName = `VA_${new mongoose.Types.ObjectId().toString()}.xlsx`;
+  const vaFilePath = path.join(process.cwd(), vaFileName);
   XLSX.writeFileXLSX(vaWb, vaFilePath);
-
-  setTimeout(async () => {
-    await rm(vsFilePath, { force: true });
-    await rm(vaFilePath, { force: true });
-  }, 3000);
 
   ctx.session.is_editable_message = true;
 
-  return await ctx.replyWithDocument(new InputFile(vsFilePath, 'VS_codes.xlsx'), {
-    caption: 'VS codes',
-    parse_mode: 'HTML',
-  }).then(() =>
-    ctx.replyWithDocument(new InputFile(vaFilePath, 'VA_codes.xlsx'), {
+  try {
+    await ctx.replyWithDocument(new InputFile(vsFilePath, vsFileName), {
+      caption: 'VS codes',
+      parse_mode: 'HTML',
+    });
+
+    await ctx.replyWithDocument(new InputFile(vaFilePath, vaFileName), {
       caption: 'VA codes',
       parse_mode: 'HTML',
-    })
-  );
+    });
+
+    console.log('Files sent successfully.');
+  } catch (err) {
+    console.error('Error sending files:', err);
+    await ctx.reply('❌ Fayllarni yuborishda xatolik yuz berdi.');
+  } finally {
+    try {
+      await rm(vsFilePath, { force: true });
+      await rm(vaFilePath, { force: true });
+      console.log('Temporary files deleted.');
+    } catch (err) {
+      console.error('Failed to delete temp files:', err);
+    }
+  }
 }
