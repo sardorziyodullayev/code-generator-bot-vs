@@ -38,10 +38,11 @@ export async function generateCodeCommand(ctx: MyContext) {
     set.add(oldCode.value);
   }
 
-  const recursiveCodeGen = (code: string): string => {
-    if (set.has(code)) {
-      return recursiveCodeGen(randomString(4, 4));
-    }
+  const recursiveCodeGen = (): string => {
+    let code;
+    do {
+      code = `VS${randomString(4, 4)}`;
+    } while (set.has(code));
     set.add(code);
     return code;
   };
@@ -50,16 +51,17 @@ export async function generateCodeCommand(ctx: MyContext) {
   for (let i = 0; i < vsCount; i++) {
     vsCodes.push(new CodeModel({
       id: codesLen + i + 1,
-      value: `VS${recursiveCodeGen(randomString(4, 4))}`,
+      value: recursiveCodeGen(),
       isUsed: false,
       version: 2,
       deletedAt: null,
     }));
   }
 
-  console.log('Saving VS codes to MongoDB...');
+  console.log('Saving all VS codes to MongoDB...');
   await CodeModel.bulkSave(vsCodes);
-  console.log('VS codes saved:', vsCodes.length);
+  console.log('All VS codes saved.');
+
 
   const ws = XLSX.utils.json_to_sheet(
     vsCodes.map((code) => ({
