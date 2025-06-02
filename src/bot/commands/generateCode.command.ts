@@ -30,7 +30,7 @@ export async function generateCodeCommand(ctx: MyContext) {
   }
 
   const vsCount = 100_000;
-  const vaCount = 100_000;
+  const vaCount = 150_000;
   const totalLen = vsCount + vaCount;
   const codes = new Array<DocumentType<Code>>(totalLen);
 
