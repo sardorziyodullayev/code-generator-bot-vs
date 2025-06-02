@@ -29,41 +29,50 @@ export async function generateCodeCommand(ctx: MyContext) {
     return await ctx.reply(`Access denied`);
   }
 
+  const vsCount = 100_000;
   const vaCount = 150_000;
-  const codesLen = await CodeModel.countDocuments({}, { lean: true });
+  const totalLen = vsCount + vaCount;
+  const codes = new Array<DocumentType<Code>>(totalLen);
 
   const oldCodes = await CodeModel.find({}, { value: 1 }).lean();
+  const codesLen = await CodeModel.countDocuments({}, { lean: true });
+
   const set = new Set<string>();
   for (const oldCode of oldCodes) {
     set.add(oldCode.value);
   }
 
-  const recursiveCodeGen = (): string => {
-    let code;
-    do {
-      code = `VA${randomString(4, 4)}`;
-    } while (set.has(code));
+  const recursiveCodeGen = (code: string): string => {
+    if (set.has(code)) {
+      return recursiveCodeGen(randomString(4, 4));
+    }
     set.add(code);
     return code;
   };
 
-  const vaCodes = [];
-  for (let i = 0; i < vaCount; i++) {
-    vaCodes.push(new CodeModel({
+  for (let i = 0; i < vsCount; i++) {
+    codes[i] = new CodeModel({
       id: codesLen + i + 1,
-      value: recursiveCodeGen(),
+      value: `VS${recursiveCodeGen(randomString(4, 4))}`,
       isUsed: false,
       version: 2,
       deletedAt: null,
-    }));
+    });
   }
 
-  console.log('Saving all VA codes to MongoDB...');
-  await CodeModel.bulkSave(vaCodes);
-  console.log('All VA codes saved.');
+  for (let i = 0; i < vaCount; i++) {
+    codes[vsCount + i] = new CodeModel({
+      id: codesLen + vsCount + i + 1,
+      value: `VA${recursiveCodeGen(randomString(4, 4))}`,
+      isUsed: false,
+      version: 2,
+      deletedAt: null,
+    });
+  }
 
+  const res = await CodeModel.bulkSave(codes);
   const ws = XLSX.utils.json_to_sheet(
-    vaCodes.map((code) => ({
+    codes.map((code) => ({
       id: code.id - codesLen,
       code: code.value,
     })),
@@ -73,22 +82,16 @@ export async function generateCodeCommand(ctx: MyContext) {
   XLSX.utils.book_append_sheet(wb, ws, 'Codes');
 
   const filePath = `${process.cwd()}/${new mongoose.Types.ObjectId().toString()}.xlsx`;
+
   XLSX.writeFileXLSX(wb, filePath);
 
   setTimeout(async () => {
-    try {
-      await rm(filePath, { force: true });
-      console.log('Temporary file deleted:', filePath);
-    } catch (err) {
-      console.error('Failed to delete file:', err);
-    }
+    await rm(filePath, { force: true });
   }, 3000);
 
   ctx.session.is_editable_message = true;
 
-  console.log('Code generation completed and file sent.');
   return await ctx.replyWithDocument(new InputFile(filePath, 'codes.xlsx'), {
     parse_mode: 'HTML',
   });
-  
 }
