@@ -30,13 +30,9 @@ export async function generateCodeCommand(ctx: MyContext) {
   }
 
   const vsCount = 100_000;
-  const vaCount = 150_000;
-  const totalLen = vsCount + vaCount;
-  const codes = new Array<DocumentType<Code>>(totalLen);
-
-  const oldCodes = await CodeModel.find({}, { value: 1 }).lean();
   const codesLen = await CodeModel.countDocuments({}, { lean: true });
 
+  const oldCodes = await CodeModel.find({}, { value: 1 }).lean();
   const set = new Set<string>();
   for (const oldCode of oldCodes) {
     set.add(oldCode.value);
@@ -50,29 +46,23 @@ export async function generateCodeCommand(ctx: MyContext) {
     return code;
   };
 
+  const vsCodes = [];
   for (let i = 0; i < vsCount; i++) {
-    codes[i] = new CodeModel({
+    vsCodes.push(new CodeModel({
       id: codesLen + i + 1,
       value: `VS${recursiveCodeGen(randomString(4, 4))}`,
       isUsed: false,
       version: 2,
       deletedAt: null,
-    });
+    }));
   }
 
-  for (let i = 0; i < vaCount; i++) {
-    codes[vsCount + i] = new CodeModel({
-      id: codesLen + vsCount + i + 1,
-      value: `VA${recursiveCodeGen(randomString(4, 4))}`,
-      isUsed: false,
-      version: 2,
-      deletedAt: null,
-    });
-  }
+  console.log('Saving VS codes to MongoDB...');
+  await CodeModel.bulkSave(vsCodes);
+  console.log('VS codes saved:', vsCodes.length);
 
-  const res = await CodeModel.bulkSave(codes);
   const ws = XLSX.utils.json_to_sheet(
-    codes.map((code) => ({
+    vsCodes.map((code) => ({
       id: code.id - codesLen,
       code: code.value,
     })),
@@ -82,11 +72,16 @@ export async function generateCodeCommand(ctx: MyContext) {
   XLSX.utils.book_append_sheet(wb, ws, 'Codes');
 
   const filePath = `${process.cwd()}/${new mongoose.Types.ObjectId().toString()}.xlsx`;
-
   XLSX.writeFileXLSX(wb, filePath);
 
+  // Faylni avtomatik o‘chirish (3 sekunddan keyin)
   setTimeout(async () => {
-    await rm(filePath, { force: true });
+    try {
+      await rm(filePath, { force: true });
+      console.log('Temporary file deleted:', filePath);
+    } catch (err) {
+      console.error('Failed to delete file:', err);
+    }
   }, 3000);
 
   ctx.session.is_editable_message = true;
