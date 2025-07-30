@@ -4,7 +4,7 @@ import { COLLECTIONS } from '../../common/constant/tables';
 
 @modelOptions({
   schemaOptions: {
-    collection: COLLECTIONS.codes,
+    collection: COLLECTIONS.codeLogs,
     toObject: {
       virtuals: true,
     },

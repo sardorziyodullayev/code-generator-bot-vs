@@ -20,8 +20,8 @@ export const messageIds: Record<'uz' | 'ru', MessageI> = {
       economy: 36,
       symbolic: 38,
     },
-    codeReal: 12,
-    codeFake: 13,
+    codeReal: 12, // 12 code real
+    codeFake: 13, // 13 code fake
     codeUsed: 19,
     codeUsageLimit: 40
   },

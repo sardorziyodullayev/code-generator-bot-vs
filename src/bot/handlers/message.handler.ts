@@ -83,7 +83,7 @@ async function checkCode(ctx: MyContext) {
   ctx.session.is_editable_message = false;
 
   const usedCodesCount = await CodeModel.find({ usedById: ctx.session.user.db_id, deletedAt: null }).countDocuments();
-
+  
   const settings = await SettingsModel.findOne({ deletedAt: null }).lean();
 
   if (settings?.codeLimitPerUser?.status && settings?.codeLimitPerUser?.value && settings.codeLimitPerUser.value >= usedCodesCount) {
