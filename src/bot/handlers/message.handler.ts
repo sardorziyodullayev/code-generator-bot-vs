@@ -13,6 +13,7 @@ import { CodeLogModel } from '../../db/models/code-logs.model';
 import { Types } from 'mongoose';
 import { SettingsModel } from '../../db/models/settings.model';
 import winners from '../../config/winners.json';
+import nowinners from '../../config/nowinners.json';
 
 const channelId = -1001886860465;
 
@@ -28,6 +29,8 @@ if ((winners as any)?.tiers) {
   }
 }
 const getTier = (code: string): GiftTier | null => tierMap.get(norm(code)) ?? null;
+
+const nowinnerSet = new Set(nowinners.map(norm));
 
 async function registerUserName(ctx: MyContext) {
   const text = ctx.message!.text as string;
@@ -90,6 +93,8 @@ async function checkCode(ctx: MyContext) {
   const variants = Array.from(new Set([raw, upper, hyphened].filter(Boolean)));
 
   const tier = getTier(hyphened);
+  const isInNoWinners = nowinnerSet.has(norm(hyphened));
+
   const code = await CodeModel.findOne(
     { $and: [{ $or: variants.map((v) => ({ value: v })) }, { deletedAt: null }] },
     { value: 1, isUsed: 1, usedById: 1, giftId: 1, productId: 1 },
@@ -102,9 +107,8 @@ async function checkCode(ctx: MyContext) {
     codeId: code ? code._id : null,
   });
 
-  if (!tier) {
-    const msgId = code ? messageIds[lang].codeReal : messageIds[lang].codeFake;
-    return await ctx.api.forwardMessage(ctx.from.id, channelId, msgId);
+  if (!tier && !isInNoWinners) {
+    return await ctx.api.forwardMessage(ctx.from.id, channelId, messageIds[lang].codeFake);
   }
 
   if (code?.isUsed && code.usedById?.toString() !== ctx.session.user.db_id.toString()) {
@@ -131,7 +135,11 @@ async function checkCode(ctx: MyContext) {
     );
   }
 
-  return await ctx.api.forwardMessage(ctx.from.id, channelId, messageIds[lang].codeWithGift[tier]);
+  if (!tier && isInNoWinners) {
+    return await ctx.api.forwardMessage(ctx.from.id, channelId, messageIds[lang].codeReal);
+  }
+
+  return await ctx.api.forwardMessage(ctx.from.id, channelId, messageIds[lang].codeWithGift[tier!]);
 }
 
 const onMessageHandler = async (ctx: MyContext) => {
